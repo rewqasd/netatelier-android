@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+<rect width="900" height="900" fill="#eeece8"/>
+<g fill="none" stroke="#777" stroke-width="5"><path d="M80 80H820V360H480V820H80Z"/><path d="M80 480H480"/></g>
+<g font-family="Arial, PingFang SC, sans-serif" fill="#666" font-size="32"><text x="350" y="245">展厅 501</text><text x="170" y="660">更衣室</text></g>
+<g stroke="#bbb" stroke-width="1"><path d="M60 35L720 78M25 305L70 307M810 460L855 463M530 805L760 810"/></g>
+</svg>

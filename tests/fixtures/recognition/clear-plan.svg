@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+<rect width="1200" height="800" fill="white"/>
+<g fill="none" stroke="#151515" stroke-width="9"><rect x="60" y="60" width="1080" height="680"/><path d="M660 60V740M60 420H660M660 350H1140"/></g>
+<g fill="#111" font-family="Arial, PingFang SC, sans-serif" font-size="52"><text x="230" y="250">厨房 101</text><text x="210" y="605">Office 202</text><text x="790" y="235">就餐区</text><text x="790" y="565">入口</text></g>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1000" viewBox="0 0 1500 1000">
+<rect width="1500" height="1000" fill="white"/>
+<g fill="none" stroke="#242424" stroke-width="8"><rect x="100" y="150" width="1300" height="750"/><path d="M100 650H1400M600 150V650M1000 150V650"/></g>
+<g font-family="Arial, PingFang SC, sans-serif" fill="#222"><g font-size="40"><text x="230" y="395">前台 Reception</text><text x="680" y="380">办公室 301</text><text x="1060" y="385">库房 302</text><text x="570" y="785">公共通道</text></g><g font-size="24"><text x="555" y="80">26.00m</text><text x="1450" y="550" transform="rotate(90 1450 550)">15.00m</text></g></g>
+<g stroke="#777" fill="none" stroke-width="2"><path d="M100 130V70M1400 130V70M100 100H1400M120 85L100 100L120 115M1380 85L1400 100L1380 115"/></g>
+</svg>

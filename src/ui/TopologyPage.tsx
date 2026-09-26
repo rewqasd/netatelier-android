@@ -1,0 +1,11 @@
+import type {DerivedProject,Project} from '../domain/model';
+export function TopologyPage({project,derived,onLocate}:{project:Project;derived:DerivedProject;onLocate:(floor:string,device:string)=>void}){
+ const graph=derived.topology,depth=new Map(graph.nodes.map(n=>[n.id,0]));
+ for(let pass=0;pass<8;pass++)for(const edge of graph.edges)depth.set(edge.to,Math.max(depth.get(edge.to)??0,Math.min(7,(depth.get(edge.from)??0)+1)));
+ const rows=new Map<number,number>(),positions=new Map(graph.nodes.map(n=>{const level=depth.get(n.id)??0,row=rows.get(level)??0;rows.set(level,row+1);return [n.id,{x:30+level*210,y:35+row*90}] as const;}));
+ const width=240+(Math.max(0,...depth.values()))*210,height=80+Math.max(1,...rows.values())*90;
+ return <section className="result-page topology-page"><h2>网络组网拓扑</h2><p>与点位、交换机端口及报价共用同一份工程数据。点选末端设备返回其楼层位置。</p><div className="topology-scroll" tabIndex={0} aria-label="可横向滚动的网络拓扑"><svg role="img" aria-label="网络组网拓扑图" width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+  {graph.edges.map(e=>{const a=positions.get(e.from),b=positions.get(e.to);if(!a||!b)return null;return <g key={e.id}><path d={`M${a.x+170} ${a.y+25} H${a.x+190} V${b.y+25} H${b.x}`} fill="none" stroke="#a2b4a8"/><text x={b.x-4} y={b.y+16} textAnchor="end" fontSize="9" fill="#557363">{e.label}</text></g>;})}
+  {graph.nodes.map(n=>{const p=positions.get(n.id)!;return <g key={n.id} data-topology-kind={n.kind} data-topology-device={n.deviceId} role={n.deviceId?'button':undefined} tabIndex={n.deviceId?0:undefined} aria-label={n.label} onClick={()=>{if(n.deviceId&&n.floorId)onLocate(n.floorId,n.deviceId);}} onKeyDown={e=>{if(e.key==='Enter'&&n.deviceId&&n.floorId)onLocate(n.floorId,n.deviceId);}}><rect x={p.x} y={p.y} width="170" height="55" rx="7" fill={n.deviceId?'#fff':'#e9f0ea'} stroke="#a4b7a9"/><text x={p.x+10} y={p.y+21} fontSize="11">{n.label.length>23?n.label.slice(0,22)+'…':n.label}<title>{n.label}</title></text><text x={p.x+10} y={p.y+41} fill="#667d6d" fontSize="10">{project.floors.find(f=>f.id===n.floorId)?.name??'项目核心'}</text></g>;})}
+ </svg></div><details><summary>完整连接与端口表</summary>{graph.edges.map(e=><p key={e.id}>{graph.nodes.find(n=>n.id===e.from)?.label} → {graph.nodes.find(n=>n.id===e.to)?.label}：{e.label}</p>)}</details></section>;
+}
