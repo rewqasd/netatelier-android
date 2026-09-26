@@ -49,6 +49,8 @@ node scripts/release.mjs /absolute/private/signing.json
 ANDROID_SERIAL=emulator-5580 node scripts/android-release-smoke.mjs signed.apk artifacts/acceptance/inputs/clear-plan.png
 ```
 
-该命令会卸载专用模拟器里的本应用，断网重装并测试真实OCR/场景保存重启。不能用于有重要数据的手机。不要只验证debug包后声称release包也通过。
+该命令会卸载专用模拟器里的本应用，断网重装并测试真实OCR/场景保存重启，同时检查ADB整屏像素中画布没有覆盖上方工具栏。图片解码使用本机Playwright Chromium，不连接或修改被测应用。不能用于有重要数据的手机。不要只验证debug包后声称release包也通过。
+
+模拟器整屏画面必须另行检查，WebView调试截图不能替代。此Mac ARM64上的Emulator37.1.11搭配WebView133在`swiftshader`及`swangle`出现ANGLE着色器错误和重复画布条带；同一APK、数据改用`-gpu host`后正常。这里只调整验收设备的图形后端，没有在应用中关闭硬件加速，也不能外推到真实手机；其他主机按[Android官方图形配置说明](https://developer.android.com/studio/run/emulator-acceleration)选择兼容后端。
 
 针对审查后的编辑修复，先 `npm run android:build`，在专用模拟器安装该debug APK，再运行 `ANDROID_SERIAL=emulator-5580 node scripts/android-edit-repairs.mjs`。它通过实际界面测试锁定路线、手工摄像头目标、保存重启和酒店主干重确认，仅读取原生存储用于断言，不直接改写工程来伪造成功。签名包另用上面的黑盒脚本，不使用WebView调试桥。

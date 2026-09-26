@@ -11,7 +11,11 @@ test('an unexpected editor render failure has a home escape and preserves the la
  await page.goto('/');await page.getByRole('button',{name:'300㎡ 办公企业',exact:true}).click();await expect(page.getByLabel('保存状态')).toContainText('已保存');
  const saved=await page.evaluate(()=>{const id=localStorage.getItem('netatelier:last')!;return {id,raw:localStorage.getItem(`netatelier:project:${id}`)};});
  // Fault injection at the rendering boundary, not a fake success path.
- await page.route('**/src/ui/PlannerPage.tsx',route=>route.fulfill({contentType:'application/javascript',body:'export function PlannerPage(){throw new Error("injected renderer failure")}'}));await page.reload();
+ // A reused Vite server appends its HMR timestamp. Match the module pathname,
+ // not an exact URL which can silently skip the intended fault injection.
+ let injected=false;
+ await page.route(url=>url.pathname==='/src/ui/PlannerPage.tsx',route=>{injected=true;return route.fulfill({contentType:'application/javascript',body:'export function PlannerPage(){throw new Error("injected renderer failure")}'});});await page.reload();
+ expect(injected).toBe(true);
  await expect(page.getByRole('alert')).toContainText('原项目已保留');await page.getByRole('button',{name:'返回首页',exact:true}).click();await expect(page.getByRole('button',{name:'300㎡ 办公企业',exact:true})).toBeVisible();
  expect(await page.evaluate(id=>localStorage.getItem(`netatelier:project:${id}`),saved.id)).toBe(saved.raw);expect(await page.evaluate(()=>localStorage.getItem('netatelier:last'))).toBeNull();
 });
