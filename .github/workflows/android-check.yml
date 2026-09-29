@@ -24,7 +24,11 @@ jobs:
       - run: node scripts/verify.mjs
         env:
           CI: 'true'
-      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd
+        with:
+          cmdline-tools-version: '15859902'
+          accept-android-sdk-licenses: false
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
       - run: npm run android:build
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
