@@ -25,7 +25,7 @@ export function ImportPage({onRecognized}:{onRecognized?:(page:ImportedPage)=>vo
   }
   async function recognize(){
     if(!handle)return;
-    const id=`ocr-${crypto.randomUUID()}`;active.current=id;setError('');setStage('正在生成页面图片…');
+    const id=`ocr-${crypto.randomUUID()}`;active.current=id;setResult(undefined);setError('');setStage('正在生成页面图片…');
     try{
       const raster=await LocalDocuments.renderPage({requestId:id,id:handle.id,page,rotation});
       if(!current(id))return;
@@ -48,8 +48,8 @@ export function ImportPage({onRecognized}:{onRecognized?:(page:ImportedPage)=>vo
     {handle&&<div className="import-controls">
       <p>已导入{handle.mime==='application/pdf'?` PDF，共${handle.pages}页`:'图片'}。先选页和方向，再识别。</p>
       <div className="control-row">
-        <label>页面<select aria-label="页面" disabled={!!stage} value={page} onChange={e=>setPage(Number(e.target.value))}>{Array.from({length:handle.pages},(_,n)=><option key={n} value={n}>第{n+1}页</option>)}</select></label>
-        <label>旋转<select aria-label="旋转" disabled={!!stage} value={rotation} onChange={e=>setRotation(Number(e.target.value))}>{[0,90,180,270].map(deg=><option key={deg} value={deg}>{deg}°</option>)}</select></label>
+        <label>页面<select aria-label="页面" disabled={!!stage} value={page} onChange={e=>{setPage(Number(e.target.value));setResult(undefined);setError('');}}>{Array.from({length:handle.pages},(_,n)=><option key={n} value={n}>第{n+1}页</option>)}</select></label>
+        <label>旋转<select aria-label="旋转" disabled={!!stage} value={rotation} onChange={e=>{setRotation(Number(e.target.value));setResult(undefined);setError('');}}>{[0,90,180,270].map(deg=><option key={deg} value={deg}>{deg}°</option>)}</select></label>
         <button onClick={()=>void recognize()} disabled={!!stage}>识别这一页</button>
       </div>
     </div>}
