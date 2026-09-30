@@ -78,3 +78,21 @@ test('recognition limits reject concurrent work before adapter and recover after
  const prior=calls;assert.equal((await recognize(identities[0])).status,429);assert.equal(calls,prior);time+=60001;const renewed=recognize(identities[0]);while(calls===prior)await new Promise(r=>setTimeout(r,5));pending.at(-1).resolve(draft);assert.equal((await renewed).status,201);
  }finally{for(const job of pending)job.reject(new Error('cleanup'));app.server.closeAllConnections();await new Promise(r=>app.server.close(r));app.store.close();}
 });
+
+test('configured endpoint exposes readiness and rejects oversized synthetic image before provider',async()=>{
+ const {createVisionAdapter}=await import('./vision.mjs');let providerCalls=0;
+ const app=createApp({dbPath:':memory:',allowedOrigin:'http://localhost:4318',vision:createVisionAdapter({enabled:true,apiKey:'synthetic-only'},{fetchImpl:async()=>{providerCalls++;throw Error('must not call')}})});
+ await app.store.createUser('readiness@example.test','synthetic-test-password');await new Promise(r=>app.server.listen(0,'127.0.0.1',r));
+ const base=`http://127.0.0.1:${app.server.address().port}`;
+ async function post(path,body,cookie,tenant){return fetch(base+path,{method:'POST',headers:{Origin:'http://localhost:4318','Content-Type':'application/json',...(cookie?{Cookie:cookie}:{}),...(tenant?{'X-Tenant-Id':tenant}:{})},body:JSON.stringify(body)})}
+ try{
+ assert.equal((await (await fetch(base+'/api/health')).json()).vision.available,true);
+ const login=await post('/api/login',{email:'readiness@example.test',password:'synthetic-test-password'});const cookie=login.headers.get('set-cookie').split(';')[0];
+ const tenant=(await (await post('/api/tenants',{name:'Synthetic readiness'},cookie)).json()).tenant.id;
+ const project=(await (await post('/api/projects',{name:'Synthetic'},cookie,tenant)).json()).project.id;
+ const image=Buffer.from('89504e470d0a1a0a0000000d4948445200000961000000010806000000','hex');
+ const rejected=await post(`/api/projects/${project}/recognitions`,{mime:'image/png',imageBase64:image.toString('base64'),consent:true},cookie,tenant);
+ assert.equal(rejected.status,400);assert.equal((await rejected.json()).error,'VISION_IMAGE_INVALID');assert.equal(providerCalls,0);
+ assert.equal(app.store.db.prepare('SELECT count(*) n FROM recognitions').get().n,0);
+ }finally{app.server.closeAllConnections();await new Promise(r=>app.server.close(r));app.store.close()}
+});

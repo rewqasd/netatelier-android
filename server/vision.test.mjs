@@ -14,3 +14,11 @@ test('caller cancellation propagates and fetch failure is opaque',async()=>{cons
 test('JPEG dimensions and PNG dimension limit are checked',async()=>{const jpeg=Buffer.from('ffd8ffc00011080001000103012200021100031100ffd9','hex').toString('base64');assert.deepEqual(await createVisionAdapter({enabled:true,apiKey:'mock'},{fetchImpl:async()=>response()}).recognize({...input,mime:'image/jpeg',imageBase64:jpeg}),draft);const large=Buffer.from(png,'base64');large.writeUInt32BE(2401,16);await assert.rejects(createVisionAdapter({enabled:true,apiKey:'mock'},{fetchImpl:async()=>response()}).recognize({...input,imageBase64:large.toString('base64')}));});
 test('strict nested validation and nonfinite values',()=>{for(const d of [{...draft,walls:[{from:{x:NaN,y:0},to:{x:0,y:0}}]},{...draft,walls:Array(1001).fill({from:{x:0,y:0},to:{x:0,y:0}})},{...draft,warnings:Array(101).fill('warning')},{...draft,rooms:[{...draft.rooms[0],use:'script'}]},{...draft,rooms:[{...draft.rooms[0],name:'x'.repeat(81)}]},{...draft,rooms:[{...draft.rooms[0],extra:'html'}]},{...draft,rooms:[{...draft.rooms[0],polygon:[{x:0,y:0,extra:1},{x:1,y:0},{x:1,y:1}]}]}])assert.throws(()=>validateDraft(d));});
 test('cancellation settles even when custom fetch ignores signal',async()=>{const c=new AbortController();const pending=createVisionAdapter({enabled:true,apiKey:'mock'},{fetchImpl:()=>new Promise(()=>{})}).recognize(input,c.signal);c.abort();await assert.rejects(pending);});
+test('availability and input rejection are explicit and never call provider',async()=>{
+ assert.equal(createVisionAdapter().available,false);
+ let calls=0;const adapter=createVisionAdapter({enabled:true,apiKey:'mock'},{fetchImpl:async()=>{calls++;return response();}});
+ assert.equal(adapter.available,true);const large=Buffer.from(png,'base64');large.writeUInt32BE(2401,16);
+ await assert.rejects(adapter.recognize({...input,imageBase64:large.toString('base64')}),e=>e.status===400&&e.code==='VISION_IMAGE_INVALID');
+ await assert.rejects(adapter.recognize({...input,consent:false}),e=>e.status===400&&e.code==='VISION_CONSENT_REQUIRED');
+ assert.equal(calls,0);
+});

@@ -5,15 +5,16 @@ import {join} from 'node:path';
 // Real local app/store/session/API; only the external model is replaced by a synthetic response.
 test('real private server account, team, project, correction, persistence and logout',async({page})=>{
  const {createApp}=await import('../../server/app.mjs');
+ const port=Number(process.env.NETATELIER_TEAM_LIVE_PORT??4318);
  const dir=mkdtempSync(join(tmpdir(),'netatelier-ui-live-'));
  const {createVisionAdapter}=await import('../../server/vision.mjs');
  let modelCalls=0;
  const vision=createVisionAdapter({enabled:true,apiKey:'synthetic-test-key'},{fetchImpl:async()=>{modelCalls++;return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify({width:100,height:100,rooms:[{name:'合成房间',use:'office',polygon:[{x:1,y:1},{x:80,y:1},{x:80,y:80}]}],walls:[],warnings:['合成测试待确认']})}}]}));}});
- const app=createApp({dbPath:join(dir,'team.sqlite'),allowedOrigin:'http://127.0.0.1:4318',vision});
+ const app=createApp({dbPath:join(dir,'team.sqlite'),allowedOrigin:`http://127.0.0.1:${port}`,vision});
  await app.store.createUser('synthetic@example.test','synthetic-ui-test-password');
- await new Promise<void>(resolve=>app.server.listen(4318,'127.0.0.1',resolve));
+ await new Promise<void>(resolve=>app.server.listen(port,'127.0.0.1',resolve));
  try{
-  await page.goto('http://127.0.0.1:4318');
+  await page.goto(`http://127.0.0.1:${port}`);
   await page.getByLabel('邮箱',{exact:true}).fill('synthetic@example.test');
   await page.getByLabel('密码',{exact:true}).fill('synthetic-ui-test-password');
   await page.getByRole('button',{name:'登录',exact:true}).click();
