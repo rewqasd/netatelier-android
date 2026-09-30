@@ -1,0 +1,8 @@
+# User must create the secret file personally; never commit it or print it.
+services:
+  team:
+    environment:
+      DEEPSEEK_ENABLED: "1"
+      DEEPSEEK_API_KEY_FILE: /run/secrets/deepseek_api_key
+    volumes:
+      - /opt/netatelier-private/secrets/deepseek_api_key:/run/secrets/deepseek_api_key:ro

@@ -1,0 +1,29 @@
+name: netatelier-private
+services:
+  team:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    # Host network preserves loopback-only application binding on Linux.
+    network_mode: host
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      TEAM_DB_PATH: /data/team.sqlite
+      TEAM_PORT: "4318"
+      TEAM_ORIGIN: http://127.0.0.1:4318
+      DEEPSEEK_ENABLED: "0"
+    volumes:
+      - team-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:4318/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  team-data:

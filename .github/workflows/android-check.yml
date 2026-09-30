@@ -21,6 +21,11 @@ jobs:
           java-version: '21'
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - run: npm run team:test
+      - run: npm run team:build
+      - run: node deploy/check-local.mjs
+      - run: docker build -f deploy/Dockerfile -t netatelier-private-ci .
+      - run: bash deploy/ci-smoke.sh
       - run: node scripts/verify.mjs
         env:
           CI: 'true'

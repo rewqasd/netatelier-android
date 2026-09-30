@@ -47,3 +47,15 @@ ANDROID_SERIAL=emulator-5580 node scripts/verify.mjs --android
 客户图纸、导出工程、设备日志、凭据和签名文件不进入Git。示例图均为原创合成素材，不是客户案例。
 
 [第三方许可清单](docs/third-party-license-inventory.md)与原文随仓库及APK提供。公开源代码不代表已授予原创代码开源许可；目前未另指定原创代码许可证，第三方条款独立适用。
+
+## 私有团队服务（新内测入口）
+
+离线Android保持原实现。独立团队网页提供账号登录、公司/个人团队、成员权限、项目保存及视觉识图草稿；后端Node>=26.8.2，默认loopback，不开放公网账号入口。
+
+```sh
+npm run team:test
+npm run team:build
+TEAM_ORIGIN=http://127.0.0.1:4318 npm run team:start
+```
+
+无默认账号，用户需在自己的终端交互运行`node server/admin.mjs create-user email`；不要在聊天或命令参数放密码。DeepSeek默认关闭，密钥仅由用户亲自配置后端私有文件；本轮只测试模拟接口，结果始终需要人工确认。服务器部署、SSH隧道和秘密交接见[私有部署说明](docs/private-deployment.md)。
