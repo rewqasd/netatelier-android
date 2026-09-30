@@ -1,0 +1,18 @@
+import type {Vec2,SceneId,RecognitionDraft,RoomUse} from '../src/domain/model';
+import {polygonArea,interiorLabelPoint} from '../src/domain/geometry';
+import {knownLength,calibrateDraft} from '../src/recognition/calibration';
+import {createDraftEdits} from '../src/recognition/draft';
+import {createScene} from '../src/scenes';
+import {planFloor} from '../src/planning/ap';
+import {routeProject} from '../src/planning/routing';
+import {deriveProject} from '../src/quote/derive';
+import {catalog} from '../src/catalog/models';
+export type Draft={width:number;height:number;rooms:{name:string;use:string;polygon:Vec2[]}[];walls:{from:Vec2;to:Vec2}[];warnings:string[];areaAnnotations?:{roomIndex:number;value:number;unit:'m2';evidence:string;confidence:number}[]};
+export type MeasuredScale={a:Vec2;b:Vec2;lengthM:number;source:'drawing-dimension'|'field-measurement';evidence:string;confirmed:boolean};
+export type NetworkInput={scene:SceneId;concurrentUsers:number;wiredPoints:number;confirmedGeometry:boolean;cabinet?:Vec2;wan?:Vec2};
+function scale(draft:Draft,input:MeasuredScale){if(!input.confirmed||!input.evidence.trim()||!['drawing-dimension','field-measurement'].includes(input.source)||!Number.isFinite(input.lengthM)||input.lengthM<=0)throw Error('请人工确认有效长度及依据，不能从像素猜平方米');for(const p of [input.a,input.b])if(!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.y<0||p.x>draft.width||p.y>draft.height)throw Error('标尺点超出图纸');const result=knownLength(input.a,input.b,input.lengthM);if(result.kind==='unset')throw Error('两标尺点距离至少大于1像素，且长度必须有效');return result}
+export function measuredAreas(draft:Draft,input:MeasuredScale|null){if(!input?.confirmed)return null;const s=scale(draft,input).metersPerPixel!;return draft.rooms.map(room=>polygonArea(room.polygon)*s*s)}
+export function buildNetwork(draft:Draft,input:MeasuredScale,config:NetworkInput){if(!config.confirmedGeometry)throw Error('请先核对房间、外轮廓和机柜/宽带入口位置');if(!draft.rooms.length)throw Error('至少需要一个房间');for(const value of [config.concurrentUsers,config.wiredPoints])if(!Number.isSafeInteger(value)||value<0||value>10000)throw Error('终端需求必须为0..10000整数');const calibration=scale(draft,input),points=draft.rooms.flatMap(r=>r.polygon);const xmin=Math.min(...points.map(p=>p.x)),xmax=Math.max(...points.map(p=>p.x)),ymin=Math.min(...points.map(p=>p.y)),ymax=Math.max(...points.map(p=>p.y));
+ const recognition:RecognitionDraft={document:{assetId:'server-original',mime:'image/png',widthPx:draft.width,heightPx:draft.height,page:0},text:[],boundaryPx:[{x:xmin,y:ymin},{x:xmax,y:ymin},{x:xmax,y:ymax},{x:xmin,y:ymax}],roomsPx:draft.rooms.map((r,i)=>({...r,id:`room-${i}`,use:r.use as RoomUse,confirmed:true,provenance:'manual'})),wallsPx:draft.walls.map((w,i)=>({...w,id:`wall-${i}`,material:'unknown',confirmed:true,provenance:'manual'})),openingsPx:[],issues:[]};
+ const edits=createDraftEdits(recognition),suggested=interiorLabelPoint(draft.rooms[0].polygon);edits.cabinetPx=config.cabinet??suggested;edits.wanPx=config.wan??suggested;
+ const floor=calibrateDraft(recognition,calibration,edits);floor.demand={employees:0,visitors:0,terminals:config.concurrentUsers,concurrentUsers:config.concurrentUsers,wiredPoints:config.wiredPoints};const p=createScene(config.scene);p.floors=[floor];p.business=[];p.settings.monitoring=false;p.name='图纸组网草案';p.floors=[planFloor(floor,p.settings).floor];const routed=routeProject(p).project,derived=deriveProject(routed,catalog);derived.issues.unshift({code:'SITE_SURVEY_REQUIRED',severity:'blocking',message:'外轮廓暂取房间包络矩形；门洞、墙材、机柜/宽带入口和射频须现场核实。该方案及报价为草案。',entityIds:[]});derived.complete=false;return {project:routed,derived};}

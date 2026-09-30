@@ -54,12 +54,20 @@ ssh -p 11891 -S /tmp/netatelier-deploy-140-210-12-112 -O forward \
 
 默认DEEPSEEK_ENABLED=0，不调用模型。密钥由用户自己在服务器终端编辑新私有文件/opt/netatelier-private/secrets/deepseek_api_key，文件owner须能被容器UID1000读取、mode0600，父目录0700。不要粘贴到聊天、Git、日志或.env文件；助手不读取该文件。不要直接使用命令参数存明文。
 
-用户配置完成后使用deploy/compose.vision.example.yaml作为第二个compose文件。它只挂载秘密文件并设置路径，启用DEEPSEEK_ENABLED=1。正式调用前用户另行明确同意具体合成图片的外传及付费调用；本轮未实际调用DeepSeek。API固定HTTPS api.deepseek.com，默认deepseek-flash，所有结果是待确认草稿，经严格schema校验后由React SVG模板呈现，不运行模型脚本。
+用户配置完成后使用deploy/compose.vision.example.yaml作为第二个compose文件。它只挂载秘密文件并设置路径，启用DEEPSEEK_ENABLED=1。正式调用前用户另行明确同意具体合成图片的外传及付费调用；真实调用必须另外授权，不能以接口配置完成代替调用授权。API固定HTTPS api.deepseek.com，默认deepseek-flash，所有结果是待确认草稿，经严格schema校验后由React SVG模板呈现，不运行模型脚本。
 
-账号与密钥录入均必须用户交接。密钥文件不可打入部署包；数据库只存哈希会话及工程/草稿，不保存原始图片。
+账号与密钥录入均必须用户交接。密钥文件不可打入部署包；数据库存账号密码哈希、哈希会话、工程/草稿及用户明确保存的原图。原图使用私有 SQLite BLOB，单图上限 4 MiB，每团队原图总量上限 64 MiB；读取同时验证会话、团队成员和项目对象权限，响应禁止缓存，删除项目会级联删除原图。不会将图片写入日志或部署包。
 
 ## 验收与恢复
 
 检查两独立账户/团队相互无法读写项目和识别任务，member不能管理成员，owner不能移除最后owner；过期/注销会话失效。真实网页应创建项目、保存重载、注销；视觉仅合成图另行验接口。镜像构建/启动、主机资源及正式TLS在目标环境完成前不声称生产就绪。
 
-SQLite数据在独立volume；备份由用户对本应用volume停写后执行，仅本应用，不打包客户图片日志。回滚应用使用旧release目录/镜像并保留同一数据volume，数据库schema没有破坏性迁移。停止时只针对netatelier-private compose，不使用全局docker prune/down -v或删除旧服务。
+SQLite数据在独立volume；更新前使用 SQLite 在线 backup API 在本应用 volume 的私有 backups 目录创建一致快照并校验完整性；快照含账号和原图，必须保留同等访问权限，不放入 Git 或部署包。回滚应用使用旧release目录/镜像并保留同一数据volume，数据库schema没有破坏性迁移。停止时只针对netatelier-private compose，不使用全局docker prune/down -v或删除旧服务。
+
+## 原图、面积与组网草案
+
+历史项目没有保存过的原图无法恢复。用户可确认图片与旧草稿对应后首次补存，保留草稿且不调用模型；替换已有原图会清除旧草稿、标定和方案。
+
+面积默认显示待标定。人工填写草稿坐标中的已知长度两点、真实米数、标注原文或现场实测依据并确认后，才按多边形计算平方米。模型明确读到的平方米标注仅作为带证据和置信度的候选；未知单位的尺寸链不会被猜测为平方米。房间面积不是建筑面积，重叠区域不能直接求和。
+
+网页复用离线 APP 的规划、布线、拓扑和报价引擎，提供单层 Wi-Fi6、有线点的组网草案。外轮廓暂取房间包络矩形，机柜/入口建议置于首房间；墙体、开口、位置、射频和目录单价仍待现场核实，方案始终包含阻断性勘测提示，不是可直接施工的设计。原 Android APK 尚未连接团队后端；本轮是网页私有内测。

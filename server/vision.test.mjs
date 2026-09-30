@@ -22,3 +22,4 @@ test('availability and input rejection are explicit and never call provider',asy
  await assert.rejects(adapter.recognize({...input,consent:false}),e=>e.status===400&&e.code==='VISION_CONSENT_REQUIRED');
  assert.equal(calls,0);
 });
+test('printed area evidence is optional, unit-bounded and unconfirmed metadata',()=>{const area={roomIndex:0,value:12.5,unit:'m2',evidence:'12.5平方米',confidence:0.8};assert.deepEqual(validateDraft({...draft,areaAnnotations:[area]}).areaAnnotations,[area]);for(const bad of [{...area,unit:'unknown'},{...area,roomIndex:1},{...area,value:-1},{...area,evidence:''},{...area,confidence:2}])assert.throws(()=>validateDraft({...draft,areaAnnotations:[bad]}));});

@@ -1,0 +1,6 @@
+import {test,expect} from 'vitest';
+import {measuredAreas,buildNetwork} from '../../cloud/project-tools';
+const draft={width:100,height:100,rooms:[{name:'办公室',use:'office',polygon:[{x:0,y:0},{x:100,y:0},{x:100,y:100},{x:0,y:100}]}],walls:[],warnings:[]};
+const calibration={a:{x:0,y:0},b:{x:100,y:0},lengthM:10,source:'drawing-dimension' as const,evidence:'原图明确标注10m，人工核对',confirmed:true};
+test('no square metres are invented without confirmed scale',()=>{expect(measuredAreas(draft,null)).toBeNull();expect(measuredAreas(draft,{...calibration,confirmed:false})).toBeNull();expect(measuredAreas(draft,calibration)?.[0]).toBeCloseTo(100);expect(()=>measuredAreas(draft,{...calibration,lengthM:Infinity})).toThrow()});
+test('calibrated draft reuses existing planning routing and budget engines',()=>{const result=buildNetwork(draft,calibration,{scene:'office',concurrentUsers:20,wiredPoints:2,confirmedGeometry:true});expect(result.project.floors).toHaveLength(1);expect(result.project.floors[0].devices.some(d=>d.kind==='ap')).toBe(true);expect(result.derived.bom.length).toBeGreaterThan(0);expect(result.derived.topology.nodes.length).toBeGreaterThan(0);expect(result.derived.issues.some(i=>i.code==='ESTIMATED_PRICES')).toBe(true);expect(()=>buildNetwork(draft,calibration,{scene:'office',concurrentUsers:20,wiredPoints:2,confirmedGeometry:false})).toThrow()});

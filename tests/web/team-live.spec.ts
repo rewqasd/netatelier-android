@@ -32,13 +32,13 @@ test('real private server account, team, project, correction, persistence and lo
   await page.getByLabel('房间 1 名称').fill('人工校正合成房间');
   await page.getByLabel('编辑项目名称').fill('已保存合成项目');
   await page.getByRole('button',{name:'保存人工校正'}).click();
-  await expect(page.getByText('版本 2',{exact:true})).toBeVisible();
+  await expect(page.getByText('版本 3',{exact:true})).toBeVisible();
   await page.reload();
   await page.getByRole('button',{name:'已保存合成项目',exact:true}).click();
   await expect(page.getByLabel('编辑项目名称')).toHaveValue('已保存合成项目');
   await expect(page.getByLabel('房间 1 名称')).toHaveValue('人工校正合成房间');
   await page.getByRole('button',{name:'退出登录'}).click();
   await expect(page.getByRole('heading',{name:'登录团队账号'})).toBeVisible();
-  const result=await page.request.get('http://127.0.0.1:4318/api/me');expect(result.status()).toBe(401);
+  const result=await page.request.get(`http://127.0.0.1:${port}/api/me`);expect(result.status()).toBe(401);
  }finally{app.server.closeAllConnections();await new Promise<void>(resolve=>app.server.close(resolve));app.store.close();rmSync(dir,{recursive:true,force:true});}
 });
