@@ -23,3 +23,5 @@ test('availability and input rejection are explicit and never call provider',asy
  assert.equal(calls,0);
 });
 test('printed area evidence is optional, unit-bounded and unconfirmed metadata',()=>{const area={roomIndex:0,value:12.5,unit:'m2',evidence:'12.5平方米',confidence:0.8};assert.deepEqual(validateDraft({...draft,areaAnnotations:[area]}).areaAnnotations,[area]);for(const bad of [{...area,unit:'unknown'},{...area,roomIndex:1},{...area,value:-1},{...area,evidence:''},{...area,confidence:2}])assert.throws(()=>validateDraft({...draft,areaAnnotations:[bad]}));});
+
+test('model failures report safe precise classes without provider content',async()=>{for(const [r,code] of [[response(''),'VISION_RESULT_EMPTY'],[response('{}','length'),'VISION_RESULT_TRUNCATED'],[response('bad'),'VISION_RESULT_JSON'],[response('{}'),'VISION_RESULT_SCHEMA']])await assert.rejects(createVisionAdapter({enabled:true,apiKey:'mock'},{fetchImpl:async()=>r}).recognize(input),e=>e.code===code&&e.message===code);});
