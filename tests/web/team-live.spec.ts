@@ -23,7 +23,7 @@ test('real private server account, team, project, correction, persistence and lo
   await page.getByLabel('项目名称',{exact:true}).fill('合成项目');
   await page.getByRole('button',{name:'创建项目'}).click();
   await expect(page.getByLabel('编辑项目名称')).toHaveValue('合成项目');
-  await page.getByLabel('图纸文件').setInputFiles({name:'synthetic.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==','base64')});
+  await page.getByLabel('图纸文件').setInputFiles({name:'synthetic.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAAA5klEQVR4nO3SsREAIAwDMWD/ncMK+V6qXf35zsxh5y13iNV4ViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYgViBWIFYg1tn7z/EDxbGcl84AAAAASUVORK5CYII=','base64')});
   await expect(page.getByRole('button',{name:'识别图纸',exact:true})).toBeDisabled();
   await page.getByRole('checkbox').check();
   await page.getByRole('button',{name:'识别图纸',exact:true}).click();
