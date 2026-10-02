@@ -5,6 +5,16 @@ const png=Buffer.from('89504e470d0a1a0a0000000d494844520000000100000001080600000
 const input={mime:'image/png',imageBase64:png,consent:true};
 const draft={width:1,height:1,rooms:[{name:'<script>alert(1)</script>',use:'office',polygon:[{x:0,y:0},{x:1,y:0},{x:1,y:1}]}],walls:[],warnings:[]};
 const response=(content=JSON.stringify(draft),finish_reason='stop')=>new Response(JSON.stringify({choices:[{finish_reason,message:{content}}]}));
+test('vision request disables reasoning, caps output and never retries provider failure',async()=>{
+ let calls=0,body;
+ const adapter=createVisionAdapter({enabled:true,apiKey:'mock'},{fetchImpl:async(_url,o)=>{
+  calls++;body=JSON.parse(o.body);
+  return new Response('unavailable',{status:429});
+ }});
+ await assert.rejects(adapter.recognize(input),e=>e.code==='VISION_PROVIDER_LIMIT');assert.equal(calls,1);
+ assert.deepEqual(body.thinking,{type:'disabled'});assert.equal(body.max_tokens,8192);
+ assert.deepEqual(body.messages.map(m=>m.role),['system','user']);assert.equal(body.tools,undefined);
+});
 test('disabled, consent, credentials, and invalid provider reject before fetch',async()=>{for(const [config,data] of [[{},input],[{enabled:true,apiKey:'mock'}, {...input,consent:false}],[{enabled:true},input],[{enabled:true,apiKey:'mock',baseUrl:'https://evil.invalid'},input]]){let calls=0; const a=createVisionAdapter(config,{fetchImpl:async()=>{calls++;return response();}});await assert.rejects(a.recognize(data));assert.equal(calls,0);}});
 test('valid synthetic call is bounded and structured, injection remains text',async()=>{const a=createVisionAdapter({enabled:true,apiKey:'mock'},{fetchImpl:async(url,o)=>{assert.equal(url,'https://api.deepseek.com/chat/completions');assert.equal(o.redirect,'error');const body=JSON.parse(o.body);assert.equal(body.model,'deepseek-flash');assert.equal(body.response_format.type,'json_object');assert.ok(body.max_tokens);assert.ok(body.messages[1].content[1].image_url.url.startsWith('data:image/png;base64,'));return response();}});assert.deepEqual(await a.recognize(input),draft);});
 test('bad image and MIME reject before network',async()=>{for(const image of [{...input,imageBase64:'???'},{...input,mime:'image/jpeg'},{...input,imageBase64:Buffer.alloc(4*1024*1024+1).toString('base64')}]){let calls=0;await assert.rejects(createVisionAdapter({enabled:true,apiKey:'mock'},{fetchImpl:async()=>{calls++;return response();}}).recognize(image));assert.equal(calls,0);}});
