@@ -14,7 +14,10 @@
     "test:unit": "vitest run tests/unit",
     "test:web": "playwright test",
     "android:sync": "npm run build && cap sync android",
-    "android:build": "npm run android:sync && bash scripts/android-env.sh build"
+    "android:build": "npm run android:sync && bash scripts/android-env.sh build",
+    "team:build": "tsc --noEmit && vite build --config vite.team.config.ts",
+    "team:start": "node server/app.mjs",
+    "team:test": "node --test server/*.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
@@ -24,7 +27,9 @@
     "zod": "4.6.5"
   },
   "overrides": {
-    "xcode": { "uuid": "11.1.1" }
+    "xcode": {
+      "uuid": "11.1.1"
+    }
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.2",

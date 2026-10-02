@@ -55,7 +55,7 @@ export function planFloor(source:Floor,settings:Settings):{floor:Floor;issues:Is
   if(aps.length*capacity<demand)issues.push({code:'AP_CAPACITY',severity:'warning',message:'用户指定AP数量低于并发规划假设，保留数量但不能宣称容量满足。',entityIds:[floor.id]});
   if(requested!==undefined&&aps.length<requested)issues.push({code:'AP_SPACING',severity:'warning',message:'没有足够满足最小间距的AP候选，未强行堆叠设备。',entityIds:[floor.id]});
   if(floor.walls.some(w=>w.material==='unknown'))issues.push({code:'UNKNOWN_WALLS',severity:'warning',message:'墙体材质未知，无线折减仅为假设；存在覆盖/干扰不确定性。',entityIds:[floor.id]});
-  const cameraResult=planCameras(floor,floor.deviceCounts?.camera);if(settings.monitoring)issues.push(...cameraResult.issues);
+  const cameraResult=settings.monitoring?planCameras(floor,floor.deviceCounts?.camera):{devices:floor.devices.filter(d=>d.kind==='camera'&&protectedPoint(d)),issues:[]};if(settings.monitoring)issues.push(...cameraResult.issues);
   if(settings.monitoring&&cameraResult.devices.length)issues.push({code:'CAMERA_VIEW_ASSUMPTION',severity:'warning',message:'视线仅按14m、90°及已确认门洞规划；开关门状态、镜头、高度与家具遮挡待现场核实。',entityIds:[floor.id]});
   const businessInfo=floor.devices.filter(d=>d.kind==='information'&&d.businessId),info=floor.devices.filter(d=>d.kind==='information'&&!d.businessId),infoCount=floor.deviceCounts?.information??floor.demand.wiredPoints;
   if(infoCount<info.filter(protectedPoint).length)throw new Error('信息点数量不能低于锁定或手工点位数');

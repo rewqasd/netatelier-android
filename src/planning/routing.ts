@@ -26,8 +26,9 @@ function roomPaths(a:Vec2,b:Vec2,room:Room,floor:Floor):Vec2[][]{
   const first={x:start.x+dot*u.x,y:start.y+dot*u.y},second={x:end.x-dot*u.x,y:end.y-dot*u.y};
   return [[start,first,end],[start,second,end]].map(compact).filter(path=>path.slice(1).every((p,i)=>segmentInside(path[i],p,room.polygon))).map(path=>compact([a,...path,b]));
 }
-export function routeFloor(source:Floor):{floor:Floor;issues:Issue[]}{
-  const floor=structuredClone(source),issues=calibrationIssues(floor.calibration),cabinet=floor.devices.find(d=>d.kind==='cabinet'),endpoints=floor.devices.filter(d=>d.kind!=='cabinet');
+export function routeFloor(source:Floor,enabledMonitoring=true):{floor:Floor;issues:Issue[]}{
+  const floor=structuredClone(source),issues=calibrationIssues(floor.calibration),cabinet=floor.devices.find(d=>d.kind==='cabinet'),endpoints=floor.devices.filter(d=>d.kind!=='cabinet'&&(enabledMonitoring||d.kind!=='camera'));
+  const inactiveCameraIds=new Set(!enabledMonitoring?floor.devices.filter(d=>d.kind==='camera').map(d=>d.id):[]),inactiveCameraCables=source.cables.filter(c=>inactiveCameraIds.has(c.toId)||inactiveCameraIds.has(c.fromId)).map(c=>structuredClone(c));
   const problem=(code:string,message:string,entityIds:string[])=>issues.push({code,severity:'blocking',message,entityIds});
   if(!cabinet){problem('MISSING_CABINET','本层缺少机柜，无法确定线路起点',[floor.id]);return {floor,issues};}
   const nodes:{at:Vec2;rooms:string[]}[]=[];
@@ -82,6 +83,7 @@ export function routeFloor(source:Floor):{floor:Floor;issues:Issue[]}{
     else if(result.status==='provisional')problem('PROVISIONAL_ROUTE','用户线槽路径穿越待确认墙体，请核对施工条件',[result.id]);
     return result;
   });
+  floor.cables.push(...inactiveCameraCables);
   return {floor,issues};
 }
 export function routeProject(source:Project):{project:Project;issues:Issue[]}{
@@ -89,7 +91,7 @@ export function routeProject(source:Project):{project:Project;issues:Issue[]}{
   project.floors=project.floors.map((floor,index)=>{
     // One automatic building inlet; manually specified extra inlets are preserved.
     if(index>0)floor.devices=floor.devices.filter(d=>d.kind!=='wan'||d.source==='manual'||d.locked);
-    const result=routeFloor(floor);issues.push(...result.issues);return result.floor;
+    const result=routeFloor(floor,project.settings.monitoring);issues.push(...result.issues);return result.floor;
   });
   const root=project.floors[0],cabinet=root?.devices.find(d=>d.kind==='cabinet');
   const existing=project.backbones??[];project.backbones=[];

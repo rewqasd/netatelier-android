@@ -1,0 +1,9 @@
+FROM node:26.8.2-bookworm-slim
+ENV NODE_ENV=production TEAM_DB_PATH=/data/team.sqlite TEAM_PORT=4318
+WORKDIR /app
+RUN mkdir /data && chown node:node /data
+COPY --chown=node:node server ./server
+COPY --chown=node:node dist-team ./dist-team
+USER node
+EXPOSE 4318
+CMD ["node","server/app.mjs"]

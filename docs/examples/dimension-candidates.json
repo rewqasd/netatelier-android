@@ -1,0 +1,6 @@
+[
+ {"value":4000,"unit":"mm","kind":"chain","from":{"x":0,"y":0},"to":{"x":40,"y":0},"evidence":"Synthetic top dimension chain, first segment","confidence":1,"source":"manual","rawLabel":"4000","chainId":"synthetic-top","confirmed":false},
+ {"value":6000,"unit":"mm","kind":"chain","from":{"x":40,"y":0},"to":{"x":100,"y":0},"evidence":"Synthetic top dimension chain, second segment","confidence":1,"source":"manual","rawLabel":"6000","chainId":"synthetic-top","confirmed":false},
+ {"value":1000,"unit":"mm","kind":"opening","from":{"x":100,"y":40},"to":{"x":100,"y":50},"evidence":"Synthetic right wall door gap; verify endpoints and related room","confidence":1,"source":"manual","rawLabel":"1000","confirmed":false},
+ {"value":2.9,"unit":"unknown","kind":"elevation","from":{"x":50,"y":80},"to":{"x":50,"y":90},"evidence":"Synthetic elevation marker, not a planar distance","confidence":1,"source":"manual","rawLabel":"2.900","confirmed":false}
+]

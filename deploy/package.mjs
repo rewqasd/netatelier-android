@@ -1,0 +1,11 @@
+import {mkdirSync,cpSync,readFileSync,writeFileSync,readdirSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {resolve,join} from 'node:path';
+const root=resolve('.'),commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+const out=join(root,'artifacts','team-deploy',commit.slice(0,12));mkdirSync(out,{recursive:true,mode:0o700});
+for(const entry of ['dist-team','deploy'])cpSync(join(root,entry),join(out,entry),{recursive:true,filter:path=>!path.includes('/secrets/')&&!path.endsWith('.env')});
+mkdirSync(join(out,'server'),{recursive:true});for(const name of readdirSync(join(root,'server')))if(name.endsWith('.mjs')&&!name.endsWith('.test.mjs'))cpSync(join(root,'server',name),join(out,'server',name));
+const compose=readFileSync(join(out,'deploy/compose.yaml'),'utf8').replace('dockerfile: deploy/Dockerfile','dockerfile: deploy/Dockerfile.runtime');writeFileSync(join(out,'deploy/compose.yaml'),compose);
+cpSync(join(root,'docs/private-deployment.md'),join(out,'DEPLOYMENT.md'));
+writeFileSync(join(out,'build-manifest.json'),JSON.stringify({sourceCommit:commit,mode:'private-loopback',node:'26.8.2',visionEnabled:false,builtAt:new Date().toISOString()},null,2));
+execFileSync('tar',['-czf',out+'.tar.gz','-C',out,'.']);console.log(out+'.tar.gz');
